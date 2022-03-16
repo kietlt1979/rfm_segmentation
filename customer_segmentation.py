@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d  
-import pandas_profiling as pp
+# import pandas_profiling as pp
 # from scipy.stats import chi2_contingency
 # from scipy.stats import chi2
 from sklearn.cluster import KMeans
