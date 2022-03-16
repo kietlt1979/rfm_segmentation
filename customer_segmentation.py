@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d  
-import pandas_profiling as pp
+# import pandas_profiling as pp
 # from scipy.stats import chi2_contingency
 # from scipy.stats import chi2
 from sklearn.cluster import KMeans
@@ -14,7 +14,6 @@ import squarify
 from datetime import datetime
 import pickle
 import streamlit as st
-from streamlit_pandas_profiling import st_profile_report
 
 # 1. Read data
 # data = pd.read_csv('OnlineRetail.csv', encoding='unicode_escape')
@@ -155,13 +154,8 @@ elif choice == "Data Explorer Analysis" :
     st.write("#### 1. Some data")
     st.dataframe(data[['InvoiceNo', 'StockCode', 'Quantity', 'UnitPrice', 'CustomerID']].head(3))
     st.dataframe(data[['InvoiceNo', 'StockCode', 'Quantity', 'UnitPrice', 'CustomerID']].tail(3))
-
-    st.write("#### 2. Overview")
-    pr = data.profile_report()
-
-    st_profile_report(pr)
     
-    st.write("#### 3. Visualize R, F, M")
+    st.write("#### 2. Visualize R, F, M")
 
     fig1 = plt.figure(figsize=(8,10))
     plt.subplot(3, 1, 1)
