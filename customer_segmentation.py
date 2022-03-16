@@ -222,28 +222,32 @@ elif choice == 'RFM-Kmeans':
     
     st.write("### RFM Kmeans")
     st.write("##### Thuật toán này phân nhóm khách hàng dựa vào RFM và phân nhóm tự động theo K-Means")
-
+    # Build model with k=5
     # Code
     df_now = df_RFM[['Recency','Frequency','Monetary']]
-    sse = {}
-    for k in range(2, 10):
-        kmeans = KMeans(n_clusters=k, random_state=42)
-        kmeans.fit(df_now)
-        sse[k] = kmeans.inertia_ # SSE to closest cluster centroid
-
-    #Elbows.
-    fig = plt.figure(figsize=(6,6))
-    st.write("##### Elbows")    
-    plt.clf()
-    plt.title('The Elbow Method')
-    plt.xlabel('k')
-    plt.ylabel('SSE')
-    sns.pointplot(x=list(sse.keys()), y=list(sse.values()))
-    st.pyplot(fig)
-    # Build model with k=5
-    k = st.slider("Chọn k", 3, 10, 1)
+    k = st.slider("K", 3, 10, 1)
     submit = st.button("Make K-means with select k")
-    if submit:
+    if ~submit:
+        
+        sse = {}
+        for k in range(2, 10):
+            kmeans = KMeans(n_clusters=k, random_state=42)
+            kmeans.fit(df_now)
+            sse[k] = kmeans.inertia_ # SSE to closest cluster centroid
+
+        #Elbows.
+        fig = plt.figure(figsize=(6,6))
+        st.write("##### Elbows")    
+        plt.clf()
+        plt.title('The Elbow Method')
+        plt.xlabel('k')
+        plt.ylabel('SSE')
+        sns.pointplot(x=list(sse.keys()), y=list(sse.values()))
+        plt.savefig('kmeans.png')
+        st.pyplot(fig)
+    
+    else:
+        st.image("kmeans.png")
         model = KMeans(n_clusters=k, random_state=42)
         model.fit(df_now)
         df_now["Cluster"] = model.labels_
