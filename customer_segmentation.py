@@ -16,18 +16,20 @@ import pickle
 import streamlit as st
 
 # 1. Read data
-data = pd.read_csv('OnlineRetail.csv', encoding='unicode_escape')
+# data = pd.read_csv('OnlineRetail.csv', encoding='unicode_escape')
 
 #--------------
 # GUI
 st.title("Data Science Project")
 st.write("## Customer Segmentation")
 
-# Upload file
+# Upload file/ Read file
 uploaded_file = st.file_uploader('Choose a file', type = ['csv'])
 if uploaded_file is not None:
     data = pd.read_csv(uploaded_file, encoding='unicode_escape')
-    data.to_csv('OnlineRetail_new.csv', index=False)
+    data.to_pickle("OnlineRetail_new.gzip", compression='gzip')
+else:
+    data = pd.read_pickle("OnlineRetail.gzip",compression='gzip')
 
 # 2. Data pre-processing
 # Xóa các hóa đơn bị hủy
