@@ -6,3 +6,5 @@ seaborn
 scikit-learn
 plotly
 squarify
+pandas_profiling
+streamlit_pandas_profiling

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d  
-# import pandas_profiling as pp
+import pandas_profiling as pp
 # from scipy.stats import chi2_contingency
 # from scipy.stats import chi2
 from sklearn.cluster import KMeans
@@ -14,6 +14,7 @@ import squarify
 from datetime import datetime
 import pickle
 import streamlit as st
+from streamlit_pandas_profiling import st_profile_report
 
 # 1. Read data
 # data = pd.read_csv('OnlineRetail.csv', encoding='unicode_escape')
@@ -154,8 +155,13 @@ elif choice == "Data Explorer Analysis" :
     st.write("#### 1. Some data")
     st.dataframe(data[['InvoiceNo', 'StockCode', 'Quantity', 'UnitPrice', 'CustomerID']].head(3))
     st.dataframe(data[['InvoiceNo', 'StockCode', 'Quantity', 'UnitPrice', 'CustomerID']].tail(3))
+
+    st.write("#### 2. Overview")
+    pr = data.profile_report()
+
+    st_profile_report(pr)
     
-    st.write("#### 2. Visualize R, F, M")
+    st.write("#### 3. Visualize R, F, M")
 
     fig1 = plt.figure(figsize=(8,10))
     plt.subplot(3, 1, 1)
@@ -222,32 +228,28 @@ elif choice == 'RFM-Kmeans':
     
     st.write("### RFM Kmeans")
     st.write("##### Thuật toán này phân nhóm khách hàng dựa vào RFM và phân nhóm tự động theo K-Means")
-    # Build model with k=5
+
     # Code
     df_now = df_RFM[['Recency','Frequency','Monetary']]
-    k = st.slider("K", 3, 10, 1)
-    submit = st.button("Make K-means with select k")
-    if ~submit:
-        
-        sse = {}
-        for k in range(2, 10):
-            kmeans = KMeans(n_clusters=k, random_state=42)
-            kmeans.fit(df_now)
-            sse[k] = kmeans.inertia_ # SSE to closest cluster centroid
+    sse = {}
+    for k in range(2, 10):
+        kmeans = KMeans(n_clusters=k, random_state=42)
+        kmeans.fit(df_now)
+        sse[k] = kmeans.inertia_ # SSE to closest cluster centroid
 
-        #Elbows.
-        fig = plt.figure(figsize=(6,6))
-        st.write("##### Elbows")    
-        plt.clf()
-        plt.title('The Elbow Method')
-        plt.xlabel('k')
-        plt.ylabel('SSE')
-        sns.pointplot(x=list(sse.keys()), y=list(sse.values()))
-        plt.savefig('kmeans.png')
-        st.pyplot(fig)
-    
-    else:
-        st.image("kmeans.png")
+    #Elbows.
+    fig = plt.figure(figsize=(6,6))
+    st.write("##### Elbows")    
+    plt.clf()
+    plt.title('The Elbow Method')
+    plt.xlabel('k')
+    plt.ylabel('SSE')
+    sns.pointplot(x=list(sse.keys()), y=list(sse.values()))
+    st.pyplot(fig)
+    # Build model with k=5
+    k = st.slider("Chọn k", 3, 10, 1)
+    submit = st.button("Make K-means with select k")
+    if submit:
         model = KMeans(n_clusters=k, random_state=42)
         model.fit(df_now)
         df_now["Cluster"] = model.labels_
