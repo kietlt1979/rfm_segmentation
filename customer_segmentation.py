@@ -12,7 +12,7 @@ from sklearn.metrics import silhouette_score
 import plotly.express as px
 import squarify
 from datetime import datetime
-# import pickle
+import pickle
 import streamlit as st
 
 # 1. Read data
