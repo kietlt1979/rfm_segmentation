@@ -206,7 +206,7 @@ elif choice == 'RFM method':
            hover_name="RFM_level", size_max=100)
     st.plotly_chart(fig)
 
-    # Scatter Plot
+    # 3D Scatter Plot
     st.write("##### 3D Scatter Plot (RFM)")
     fig = px.scatter_3d(df_RFM, x='Recency', y='Frequency', z='Monetary',
                     color = 'RFM_level', opacity=0.5,
@@ -226,7 +226,7 @@ elif choice == 'RFM-Kmeans':
     # Code
     df_now = df_RFM[['Recency','Frequency','Monetary']]
     sse = {}
-    for k in range(2, 10):
+    for k in range(2, 11):
         kmeans = KMeans(n_clusters=k, random_state=42)
         kmeans.fit(df_now)
         sse[k] = kmeans.inertia_ # SSE to closest cluster centroid
@@ -241,64 +241,63 @@ elif choice == 'RFM-Kmeans':
     sns.pointplot(x=list(sse.keys()), y=list(sse.values()))
     st.pyplot(fig)
     # Build model with k=5
-    k = st.slider("Chọn k", 3, 10, 1)
-    submit = st.button("Make K-means with select k")
-    if submit:
-        model = KMeans(n_clusters=k, random_state=42)
-        model.fit(df_now)
-        df_now["Cluster"] = model.labels_
-        # Calculate average values for each RFM_Level, and return a size of each segment 
-        rfm_agg2 = df_now.groupby('Cluster').agg({
-            'Recency': 'mean',
-            'Frequency': 'mean',
-            'Monetary': ['mean', 'count']}).round(0)
+    k = st.slider("Chọn k", 2, 10, 5, 1)
+    # Model
+    model = KMeans(n_clusters=k, random_state=42)
+    model.fit(df_now)
+    df_now["Cluster"] = model.labels_
+    # Calculate average values for each RFM_Level, and return a size of each segment 
+    rfm_agg2 = df_now.groupby('Cluster').agg({
+        'Recency': 'mean',
+        'Frequency': 'mean',
+        'Monetary': ['mean', 'count']}).round(0)
 
-        rfm_agg2.columns = rfm_agg2.columns.droplevel()
-        rfm_agg2.columns = ['RecencyMean','FrequencyMean','MonetaryMean', 'Count']
-        rfm_agg2['Percent'] = round((rfm_agg2['Count']/rfm_agg2.Count.sum())*100, 2)
+    rfm_agg2.columns = rfm_agg2.columns.droplevel()
+    rfm_agg2.columns = ['RecencyMean','FrequencyMean','MonetaryMean', 'Count']
+    rfm_agg2['Percent'] = round((rfm_agg2['Count']/rfm_agg2.Count.sum())*100, 2)
 
-        # Reset the index
-        rfm_agg2 = rfm_agg2.reset_index()
-        # Change thr Cluster Columns Datatype into discrete values
-        rfm_agg2['Cluster'] = 'Cluster '+ rfm_agg2['Cluster'].astype('str')
-        # Kết quả phân nhóm
-        st.write("##### RFM-Kmeans Results:")
-        st.dataframe(rfm_agg2)
-        #Tree map.
-        st.write("##### Tree map (RFM-Kmeans)")
-        plt.clf()
-        fig = plt.gcf()
-        fig.set_size_inches(14, 10)    
-        colors_dict2 = {'Cluster0':'yellow','Cluster1':'royalblue', 'Cluster2':'cyan',
-                    'Cluster3':'red', 'Cluster4':'purple', 'Cluster5':'green', 'Cluster6':'gold'}
+    # Reset the index
+    rfm_agg2 = rfm_agg2.reset_index()
+    # Change thr Cluster Columns Datatype into discrete values
+    rfm_agg2['Cluster'] = 'Cluster '+ rfm_agg2['Cluster'].astype('str')
+    # Kết quả phân nhóm
+    st.write("##### RFM-Kmeans Results:")
+    st.dataframe(rfm_agg2)
+    #Tree map.
+    st.write("##### Tree map (RFM-Kmeans)")
+    plt.clf()
+    fig = plt.gcf()
+    fig.set_size_inches(14, 10)    
+    colors_dict2 = {'Cluster0':'yellow','Cluster1':'royalblue', 'Cluster2':'cyan',
+                'Cluster3':'red', 'Cluster4':'purple', 'Cluster5':'green', 'Cluster6':'gold'}
 
-        squarify.plot(sizes=rfm_agg2['Count'],
-                    text_kwargs={'fontsize':12,'weight':'bold', 'fontname':"sans serif"},
-                    color=colors_dict2.values(),
-                    label=['{} \n{:.0f} days \n{:.0f} orders \n{:.0f} $ \n{:.0f} customers ({}%)'.format(*rfm_agg2.iloc[i])
-                            for i in range(0, len(rfm_agg2))], alpha=0.5 )
+    squarify.plot(sizes=rfm_agg2['Count'],
+                text_kwargs={'fontsize':12,'weight':'bold', 'fontname':"sans serif"},
+                color=colors_dict2.values(),
+                label=['{} \n{:.0f} days \n{:.0f} orders \n{:.0f} $ \n{:.0f} customers ({}%)'.format(*rfm_agg2.iloc[i])
+                        for i in range(0, len(rfm_agg2))], alpha=0.5 )
 
 
-        plt.title("Customers Segments",fontsize=26,fontweight="bold")
-        plt.axis('off')
-        st.pyplot(fig)
+    plt.title("Customers Segments",fontsize=26,fontweight="bold")
+    plt.axis('off')
+    st.pyplot(fig)
 
-        # Scatter Plot
-        st.write("##### Scatter Plot (RFM-Kmeans)")
-        # plt.clf()
-        
-        fig = px.scatter(rfm_agg2, x="RecencyMean", y="MonetaryMean", size="FrequencyMean", color="Cluster",
-            hover_name="Cluster", size_max=100)
-        st.plotly_chart(fig)
+    # Scatter Plot
+    st.write("##### Scatter Plot (RFM-Kmeans)")
+    # plt.clf()
+    
+    fig = px.scatter(rfm_agg2, x="RecencyMean", y="MonetaryMean", size="FrequencyMean", color="Cluster",
+        hover_name="Cluster", size_max=100)
+    st.plotly_chart(fig)
 
-        # 3D Scatter Plot
-        st.write("##### 3D Scatter Plot (RFM)")
-        fig = px.scatter_3d(rfm_agg2, x='RecencyMean', y='FrequencyMean', z='MonetaryMean',
-                        color = 'Cluster', opacity=0.3)
-        fig.update_traces(marker=dict(size=20),
-                    
-                    selector=dict(mode='markers'))
-        st.plotly_chart(fig)
-        st.write("""##### Summary: 
-        - Mô hình này khách hàng không cần phải xây dựng công thức định nghĩa nhóm khách hàng, mà dựa vào Elbows để phân nhóm.
-        - Khi có kết quả phân cụm, cần phải giải thích từng cụm khách hàng theo các thuộc tính RFM ở bảng kết quả trên.""")
+    # 3D Scatter Plot
+    st.write("##### 3D Scatter Plot (RFM)")
+    fig = px.scatter_3d(rfm_agg2, x='RecencyMean', y='FrequencyMean', z='MonetaryMean',
+                    color = 'Cluster', opacity=0.3)
+    fig.update_traces(marker=dict(size=20),
+                
+                selector=dict(mode='markers'))
+    st.plotly_chart(fig)
+    st.write("""##### Summary: 
+    - Mô hình này khách hàng không cần phải xây dựng công thức định nghĩa nhóm khách hàng, mà dựa vào Elbows để phân nhóm.
+    - Khi có kết quả phân cụm, cần phải giải thích từng cụm khách hàng theo các thuộc tính RFM ở bảng kết quả trên.""")
