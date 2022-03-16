@@ -226,7 +226,7 @@ elif choice == 'RFM-Kmeans':
     # Code
     df_now = df_RFM[['Recency','Frequency','Monetary']]
     sse = {}
-    for k in range(1, 20):
+    for k in range(2, 10):
         kmeans = KMeans(n_clusters=k, random_state=42)
         kmeans.fit(df_now)
         sse[k] = kmeans.inertia_ # SSE to closest cluster centroid
@@ -241,7 +241,7 @@ elif choice == 'RFM-Kmeans':
     sns.pointplot(x=list(sse.keys()), y=list(sse.values()))
     st.pyplot(fig)
     # Build model with k=5
-    k = st.slider("Chọn k", 2, 20, 1)
+    k = st.slider("Chọn k", 3, 10, 1)
     submit = st.button("Make K-means with select k")
     if submit:
         model = KMeans(n_clusters=k, random_state=42)
