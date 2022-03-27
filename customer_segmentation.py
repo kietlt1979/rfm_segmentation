@@ -1,12 +1,10 @@
+from operator import mod
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d  
-# import pandas_profiling as pp
-# from scipy.stats import chi2_contingency
-# from scipy.stats import chi2
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import plotly.express as px
@@ -24,59 +22,38 @@ st.title("Data Science Project")
 st.write("## Customer Segmentation")
 
 # Upload file/ Read file
-uploaded_file = st.file_uploader('Choose a file', type = ['csv'])
-if uploaded_file is not None:
-    data = pd.read_csv(uploaded_file, encoding='unicode_escape')
-    data.to_pickle("OnlineRetail_new.gzip", compression='gzip')
-else:
-    data = pd.read_pickle("OnlineRetail.gzip",compression='gzip')
+data = pd.read_pickle("OnlineRetail.gzip",compression='gzip')
 
 # 2. Data pre-processing
 # Xóa các hóa đơn bị hủy
-data = data.loc[~data['InvoiceNo'].str.startswith('C',na=False)]
-# Tạo cột "day" để phân tích RFM
-string_to_date = lambda x : datetime.strptime(x, "%d-%m-%Y %H:%M").date()
-# Convert InvoiceDate from object to datetime format
-data['day'] = data['InvoiceDate'].apply(string_to_date)
-data['day'] = data['day'].astype('datetime64[ns]')
-# Drop NA values
-data = data.dropna()
-# Delete quantity < 0
-data = data.loc[data.Quantity >0]
-# Create gross_sales column
-data['gross_sales'] = data.Quantity * data.UnitPrice
+# data = data.loc[~data['InvoiceNo'].str.startswith('C',na=False)]
+# # Tạo cột "day" để phân tích RFM
+# string_to_date = lambda x : datetime.strptime(x, "%d-%m-%Y %H:%M").date()
+# # Convert InvoiceDate from object to datetime format
+# data['day'] = data['InvoiceDate'].apply(string_to_date)
+# data['day'] = data['day'].astype('datetime64[ns]')
+# # Drop NA values
+# data = data.dropna()
+# # Delete quantity < 0
+# data = data.loc[data.Quantity >0]
+# # Create gross_sales column
+# data['gross_sales'] = data.Quantity * data.UnitPrice
 # RFM
 # Convert string to date, get max date of dataframe
-max_date = data['day'].max().date()
+# max_date = data['day'].max().date()
 
-Recency = lambda x: (max_date - x.max().date()).days
-Frequency = lambda x: len(x.unique())
-Monetary = lambda x: round(sum(x), 2)
+# Recency = lambda x: (max_date - x.max().date()).days
+# Frequency = lambda x: len(x.unique())
+# Monetary = lambda x: round(sum(x), 2)
 
-df_RFM = data.groupby('CustomerID').agg({'day': Recency,
-                                        'InvoiceNo': Frequency,
-                                        'gross_sales': Monetary})
-# Rename the columns of DataFrame
-df_RFM.columns = ['Recency', 'Frequency', 'Monetary']
-# Descending Sorting
-df_RFM = df_RFM.sort_values('Monetary', ascending = False)
-# Create labels for Recency, Frequency, Monetary
-r_labels = range(4, 0, -1) #số ngày tính từ lần cuối mua hàng lớn thì gán nhãn nhỏ, ngược lại thì nhãn lớn
-f_labels = range(1, 5)
-m_labels = range(1, 5)
-# Assign these labels to 4 equal percentile groups
-r_groups = pd.qcut(df_RFM['Recency'].rank(method='first'), q=4, labels=r_labels)
-f_groups = pd.qcut(df_RFM['Frequency'].rank(method='first'), q=4, labels=f_labels)
-m_groups = pd.qcut(df_RFM['Monetary'].rank(method='first'), q=4, labels=m_labels)
-# Creat new columns R, F, M
-df_RFM = df_RFM.assign(R = r_groups.values, F = f_groups.values, M=m_groups.values )
-def join_rfm(x): return str(int(x['R'])) + str(int(x['F'])) + str(int(x['M']))
-df_RFM['RFM_Segment'] = df_RFM.apply(join_rfm, axis=1)
-# Calculate RFM score
-df_RFM['RFM_score'] = df_RFM[['R', 'F', 'M']].sum(axis=1)
-
-
-# 3. Build model
+# df_RFM = data.groupby('CustomerID').agg({'day': Recency,
+#                                         'InvoiceNo': Frequency,
+#                                         'gross_sales': Monetary})
+# # Rename the columns of DataFrame
+# df_RFM.columns = ['Recency', 'Frequency', 'Monetary']
+# df_RFM.to_csv("data_RFM.csv")
+# Load data
+df_RFM = pd.read_csv('data_RFM.csv')
 # C1: Định nghĩa nhóm khách hàng
 def rfm_level(df):
     if (df['R'] == 4 and df['F'] ==4 and df['M'] == 4)  :
@@ -102,26 +79,38 @@ def rfm_level(df):
             return 'LIGHT'
         
         return 'REGULARS'
-# Create a new column_RFM_level
-df_RFM['RFM_level'] = df_RFM.apply(rfm_level, axis = 1)
-# Calculate average values for each RFM_Level, and return a size of each segment 
-rfm_agg = df_RFM.groupby('RFM_level').agg({
-    'Recency': 'mean',
-    'Frequency': 'mean',
-    'Monetary': ['mean', 'count']}).round(0)
+# Ham tao df RMF
+r_labels = range(4, 0, -1)
+f_labels = range(1, 5)
+m_labels = range(1, 5)
+def join_rfm(x): return str(int(x['R'])) + str(int(x['F'])) + str(int(x['M'])) 
+def df_for_RMF(dataframe):
+    data_new = dataframe.sort_values('Monetary', ascending = False)
+    r_groups = pd.qcut(data_new['Recency'].rank(method='first'), q=4, labels=r_labels)
+    f_groups = pd.qcut(data_new['Frequency'].rank(method='first'), q=4, labels=f_labels)
+    m_groups = pd.qcut(data_new['Monetary'].rank(method='first'), q=4, labels=m_labels)
+    data_new = data_new.assign(R = r_groups.values, F = f_groups.values, M=m_groups.values )
+    data_new['RFM_Segment'] = data_new.apply(join_rfm, axis=1)
+    # Calculate RFM score
+    data_new['RFM_score'] = data_new[['R', 'F', 'M']].sum(axis=1)# Descending Sorting
+    # Create a new column_RFM_level
+    data_new['RFM_level'] = data_new.apply(rfm_level, axis = 1)
+    return data_new
 
-rfm_agg.columns = rfm_agg.columns.droplevel()
-rfm_agg.columns = ['RecencyMean','FrequencyMean','MonetaryMean', 'Count']
-rfm_agg['Percent'] = round((rfm_agg['Count']/rfm_agg.Count.sum())*100, 2)
 
-# Reset the index
-rfm_agg = rfm_agg.reset_index()
+# 3. Build model
+df_RFM = df_for_RMF(df_RFM)
+
+
 
 #5. Save models
 # luu model classication
 # pkl_filename = "ham_spam_model.pkl"  
 # with open(pkl_filename, 'wb') as file:  
 #     pickle.dump(model, file)
+# df_RFM.to_csv("df_RFM.csv")
+# rfm_agg.to_csv("rfm_agg.csv")
+
   
 # luu model CountVectorizer (count)
 # pkl_count = "count_model.pkl"  
@@ -139,7 +128,7 @@ rfm_agg = rfm_agg.reset_index()
 #     count_model = pickle.load(file)
 
 # GUI
-menu = ["Business Objective", "Data Explorer Analysis", "RFM method", "RFM-Kmeans"]
+menu = ["Business Objective", "Data Explorer Analysis", "RFM method", "RFM-Kmeans", "New Prediction"]
 
 choice = st.sidebar.selectbox('Menu', menu)
 if choice == "Business Objective" :
@@ -154,6 +143,9 @@ elif choice == "Data Explorer Analysis" :
     st.write("#### 1. Some data")
     st.dataframe(data[['InvoiceNo', 'StockCode', 'Quantity', 'UnitPrice', 'CustomerID']].head(3))
     st.dataframe(data[['InvoiceNo', 'StockCode', 'Quantity', 'UnitPrice', 'CustomerID']].tail(3))
+
+
+ 
     
     st.write("#### 2. Visualize R, F, M")
 
@@ -167,7 +159,17 @@ elif choice == "Data Explorer Analysis" :
     st.pyplot(fig1) 
     
 elif choice == 'RFM method':
-    
+    # Calculate average values for each RFM_Level, and return a size of each segment 
+    rfm_agg = df_RFM.groupby('RFM_level').agg({
+        'Recency': 'mean',
+        'Frequency': 'mean',
+        'Monetary': ['mean', 'count']}).round(0)
+
+    rfm_agg.columns = rfm_agg.columns.droplevel()
+    rfm_agg.columns = ['RecencyMean','FrequencyMean','MonetaryMean', 'Count']
+    rfm_agg['Percent'] = round((rfm_agg['Count']/rfm_agg.Count.sum())*100, 2)    
+    # Reset the index
+    rfm_agg = rfm_agg.reset_index()    
     st.write("### RFM segmentation")
     st.write("##### Định nghĩa khách hàng:")
     st.write(""" Thuật toán này phân nhóm khách hàng dựa vào R,F,M:
@@ -217,6 +219,7 @@ elif choice == 'RFM method':
     st.plotly_chart(fig)
     
     st.write("##### Summary: This model makes it easy to segment customers based on company definitions.")
+    st.write("- Các nhóm không biệt rõ như: new, active, loyal, regular, và light ")
 
 elif choice == 'RFM-Kmeans':
     
@@ -301,3 +304,36 @@ elif choice == 'RFM-Kmeans':
     st.write("""##### Summary: 
     - Mô hình này khách hàng không cần phải xây dựng công thức định nghĩa nhóm khách hàng, mà dựa vào Elbows để phân nhóm.
     - Khi có kết quả phân cụm, cần phải giải thích từng cụm khách hàng theo các thuộc tính RFM ở bảng kết quả trên.""")
+
+elif choice == 'New Prediction':
+    col = st.columns(3)
+    with col[0]:
+        # recen_new = st.text_area(label='Input your recently (days):')
+        # if recen_new !="":
+        #     recen_new=float(recen_new)
+        #     flag=True
+        recen_new = st.number_input('Insert Recently', min_value=1, step=1)
+    with col[1]:
+        frequ_new = st.number_input('Frequency', min_value=1, step=1)
+
+    with col[2]:
+        money_new = st.number_input('Monetary', min_value=1, step=1)
+
+    submit = st.button('Make Prediction')
+    if submit:
+
+        # dictionary with list object in values
+        details = {
+            'Recency' : recen_new,
+            'Frequency' : frequ_new,
+            'Monetary' : money_new
+        }
+  
+        # # creating a Dataframe object 
+        # df_new = pd.DataFrame(details)
+        df_new = df_RFM[['Recency', 'Frequency', 'Monetary']].append(details, ignore_index=True)
+   
+        # Creat new columns R, F, M
+        df_new = df_for_RMF(df_new)
+        st.write("Prediction for this customer")
+        st.dataframe(df_new.loc[(df_new['Recency'] == recen_new) & (df_new['Frequency'] == frequ_new) & (df_new['Monetary'] == money_new)])
